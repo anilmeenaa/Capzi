@@ -1,6 +1,38 @@
+<div align="center">
+
+<img src="public/brand/capzi-icon.png" alt="Capzi" width="88" />
+
 # Capzi — on-device caption studio
 
-A complete static React/TypeScript application that imports local video, transcribes speech in a Web Worker, edits individual word timings, previews six animated caption styles, and exports real H.264 MP4 or VP9 WebM on the user's device. No account, API key, analytics, media upload, server processing, or paid service.
+**Try it live: [frame-caption-studio.pages.dev](https://frame-caption-studio.pages.dev/)**
+
+A complete static React/TypeScript application that imports local video, transcribes speech in a Web Worker, edits individual word timings, previews 28 built-in caption styles, and exports real H.264 MP4 or VP9 WebM on the user's device. No account, API key, analytics, media upload, server processing, or paid service. MIT · everything runs 100% on your device.
+
+<img src="docs/media/capzi-workflow.gif" alt="Capzi workflow: open a video, edit the transcript, clean up timing and gaps, find and replace words, pick a caption style, preview every style" width="760" />
+
+</div>
+
+## See it working
+
+| | |
+|---|---|
+| <img src="docs/screenshots/live/editor.png" width="440" alt="Capzi editor with a video loaded, per-word captions in the left panel, live preview, timeline with waveform and the typography inspector on the right" /><br/><sub>The whole studio: per-word captions, live preview, timeline and waveform, typography inspector.</sub> | <img src="docs/screenshots/live/templates.png" width="440" alt="Capzi template gallery showing Reel Handwritten selected next to Impact Pop, Power Highlight and Clean Cinematic cards" /><br/><sub>Template gallery: 28 built-in caption styles, each previewed live on your captions.</sub> |
+
+| Transcript | Caption tools | Find & replace | Delay |
+|---|---|---|---|
+| <img src="docs/screenshots/caption-panel/transcript.png" width="230" alt="Captions panel listing editable word-by-word transcript" /><br/><sub>Edit every word.</sub> | <img src="docs/screenshots/caption-panel/tools.png" width="230" alt="Caption Tools panel with display settings and cleanup actions" /><br/><sub>Clean up in one tap.</sub> | <img src="docs/screenshots/caption-panel/find-replace.png" width="230" alt="Find and replace applied across captions with matched word highlighted" /><br/><sub>Fix wording everywhere.</sub> | <img src="docs/screenshots/caption-panel/delay.png" width="230" alt="Caption delay control slider shifting all captions in time" /><br/><sub>Shift timing globally.</sub> |
+
+| Before | After |
+|---|---|
+| <img src="docs/screenshots/caption-styles/before.png" width="440" alt="Default plain captions" /><br/><sub>Plain captions.</sub> | <img src="docs/screenshots/caption-styles/after.png" width="440" alt="Style gallery grid showing 28 caption styles including Taairta Sticker, Keyword Blast, Box Karaoke and Neon Neela" /><br/><sub>Every style, previewed side by side.</sub> |
+
+## Highlights
+
+- **On-device speech to captions.** Local Whisper (Small default, Tiny/Base too) with real word timestamps; Hindi, English and mixed speech, auto-romanized. Optional local M2M100 translation and an experimental on-device Shruti Hindi/Hinglish model. Nothing is uploaded.
+- **Real video export.** Frame-accurate H.264 MP4 at 720p/1080p with source audio, plus a VP9 WebM fallback; the aspect ratio of your footage is preserved.
+- **Editing that feels like an editor.** Word-level timing, emphasis, phrase grouping, undo/redo, SRT/VTT import and export, JSON projects, drag-to-position captions on the preview.
+- **Styles.** 28 built-in templates with per-caption overrides, bundled fonts (Mynerve, Inter, Barlow Condensed, Nunito, Noto Sans Devanagari), color/outline/shadow/placement controls and animation strength.
+- **Private by construction.** No account, no API key, no analytics, no media upload, no server; the only network call is the one-time model download from Hugging Face.
 
 ## Run and build
 
