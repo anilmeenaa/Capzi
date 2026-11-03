@@ -2,7 +2,7 @@ import type { CaptionStyle, Transitions, Word } from './types';
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 export const modernPresets = new Set(['sticker','blast','retro','glass','scribble','akshar','boxkaraoke','pillline','wide','neon','risefade','scalegreen','gradkey','haathorange','harabox','peelamarker','gulabibox','laloutline','narangichhaya','neelneon','typewriter','dheereglow']);
 export type Bounds={x:number;y:number;width:number;height:number};
-export type TokenLayout={index:number;width:number;x:number;y:number;halfWidth:number;halfHeight:number};
+export type TokenLayout={index:number;width:number;x:number;y:number;halfWidth:number;halfHeight:number;fontSize:number};
 export type CaptionLayout={fontSize:number;gap:number;tokens:TokenLayout[];lines:{indices:number[];x:number;y:number;width:number}[];bounds:Bounds;safe:Bounds};
 
 // Reserve the largest animation footprint once per phrase. Highlighting never
@@ -21,34 +21,43 @@ function transitionEnvelope(transitions:Transitions|undefined){
 }
 export function setCaptionFont(ctx:Context,s:CaptionStyle,fs:number){
  const family=s.font==='Courier New'?'"Courier New", ui-monospace, monospace':`"${s.font}", "Noto Sans Devanagari", sans-serif`;
- ctx.font=`${s.italic?'italic ':''}${s.weight??(s.font==='Mynerve'?400:800)} ${fs}px ${family}`;
+ ctx.font=`${s.italic?'italic ':''}${s.weight??(s.font==='Mynerve'||s.preset==='handwritten'?400:s.preset==='cinematic'?600:800)} ${fs}px ${family}`;
  // Tracking is part of measurement, and scales with output resolution. Older
  // canvases omit tracking consistently from both measurement and drawing.
  if('letterSpacing' in ctx)ctx.letterSpacing=`${(s.letterSpacing??0)*fs/s.size}px`;
  ctx.textAlign='center';ctx.textBaseline='middle';
 }
-export function layoutStyledCaption(ctx:Context,width:number,height:number,group:Word[],s:CaptionStyle):CaptionLayout{
- const unit=Math.min(width,height)/720,strength=s.strength/100;
+export function layoutStyledCaption(ctx:Context,width:number,height:number,group:Word[],s:CaptionStyle,styles?:CaptionStyle[]):CaptionLayout{
+ const unit=Math.min(width,height)/720;
  const safe={x:width*.06,y:height*.05,width:width*.88,height:height*.9};
- const texts=group.map(w=>s.uppercase?w.text.toLocaleUpperCase():w.text);
+ const texts=group.map((w,i)=>(styles?.[i]??s).uppercase?w.text.toLocaleUpperCase():w.text);
  const measure=(fs:number)=>{
   setCaptionFont(ctx,s,fs);
-  const stroke=s.stroke*unit,gap=fs*.18;
-  const shadow=(s.glow?s.glow/100*fs*.6:s.shadow/100*fs*.24)*2+s.shadow/100*fs*.08+(s.offsetShadow??0)/100*fs*.22;
-  const linePad=s.box==='line-pill'?fs*.35:s.background?fs*.2:0;
+  const gap=fs*.18;
+  let shadow=(s.glow?s.glow/100*fs*.6:s.shadow/100*fs*.24)*2+s.shadow/100*fs*.08+(s.offsetShadow??0)/100*fs*.22;
+  const linePad=styles?0:s.box==='line-pill'?fs*.35:s.background?fs*.2:0;
   const slots=texts.map((text,index)=>{
+   const style=styles?.[index]??s;
+   const fontSize=fs*style.size/s.size;
+   return measureToken(style,fontSize,text,index);
+  });
+  function measureToken(s:CaptionStyle,fs:number,text:string,index:number){
+   setCaptionFont(ctx,s,fs);const strength=s.strength/100,stroke=s.stroke*unit;
+   shadow=Math.max(shadow,(s.glow?s.glow/100*fs*.6:s.shadow/100*fs*.24)*2+s.shadow/100*fs*.08+(s.offsetShadow??0)/100*fs*.22);
    const m=ctx.measureText(text),textWidth=Math.max(m.width,m.actualBoundingBoxLeft*2,m.actualBoundingBoxRight*2);
-   const pad=(s.box==='word-pill'||s.box==='glass')?fs*.22:s.preset==='boxkaraoke'||s.marker?fs*.14:s.rectBox?fs*.2:s.cursor?Math.max(2*unit,fs*.05)+fs*.08:0;
+   const pad=styles&&(s.box==='line-pill'||s.background)?fs*.35:(s.box==='word-pill'||s.box==='glass')?fs*.22:s.preset==='boxkaraoke'||s.preset==='power'||s.marker?fs*.14:s.rectBox?fs*.2:s.cursor?Math.max(2*unit,fs*.05)+fs*.08:0;
    let scale=['blast','scalegreen','gradkey'].includes(s.preset)?Math.max(1,s.emphasisScale??1.35):1;
+   if(s.preset==='impact')scale*=1+.15*strength;
+   if(s.preset==='bubble'||s.preset==='desi')scale*=1+.1*strength;
    if(['sticker','glass','neon','akshar','neelneon','harabox'].includes(s.preset))scale*=1+.07*strength;
-   const motion=transitionEnvelope(group[index].wordTransitions);scale*=motion.scale;
+   const motion=transitionEnvelope(group[index].wordTransitions??(styles?group[index].styleOverride?.transitions:undefined));scale*=motion.scale;
    const angle=(s.preset==='sticker'?Math.abs(s.rotate??0)*Math.PI/180:0)+motion.angle+(s.marker?.02:0);
    const halfW=(textWidth/2+pad+stroke)*scale;
-   const boxHalf=s.box||s.preset==='boxkaraoke'||s.background||s.rectBox?fs*.68:0;
+   const boxHalf=s.box||s.preset==='boxkaraoke'||s.preset==='power'||s.background||s.rectBox?fs*.68:0;
    const halfH=(Math.max(boxHalf,m.actualBoundingBoxAscent,m.actualBoundingBoxDescent,s.scribble?fs*.7:0,s.underline?fs*.6:0,s.marker?fs*.68:0)+stroke)*scale;
-   return {index,width:m.width,halfWidth:halfW+halfH*Math.abs(Math.sin(angle))+motion.x*unit,
-    halfHeight:halfH+halfW*Math.abs(Math.sin(angle))+(s.preset==='sticker'&&s.float?fs*.08*strength:0)+(s.riseFade?fs*.3*strength:0)+motion.y*unit};
-  });
+   return {index,fontSize:fs,width:m.width,halfWidth:halfW+halfH*Math.abs(Math.sin(angle))+motion.x*unit,
+    halfHeight:halfH+halfW*Math.abs(Math.sin(angle))+(s.preset==='sticker'&&s.float?fs*.08*strength:0)+(s.riseFade?fs*.3*strength:0)+(s.preset==='bubble'?fs*.2*strength:s.preset==='desi'?fs*.15*strength:0)+motion.y*unit};
+  }
   const rows:{indices:number[];width:number;halfHeight:number}[]=[{indices:[],width:0,halfHeight:0}];
   for(const slot of slots){
    let row=rows.at(-1)!;

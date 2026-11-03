@@ -1,9 +1,10 @@
 import type { CaptionStyle, Word } from './types';
+import { resolveTemplateStyles } from './template-overrides';
 import { motionAt } from './motion';
 import { activeGroup } from './captions';
 import { layoutStyledCaption, fitCaptionMotion, modernPresets, setCaptionFont, type CaptionLayout } from './caption-layout';
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
-const layoutCache=new WeakMap<Context,{active:Word[];style:CaptionStyle;width:number;height:number;layout:CaptionLayout}>();
+const layoutCache=new WeakMap<Context,{active:Word[];style:CaptionStyle;width:number;height:number;layout:CaptionLayout;resolved:ReturnType<typeof resolveTemplateStyles>}>();
 const clamp=(v:number)=>Math.max(0,Math.min(1,v));
 function hexToRgba(hex:string,alpha:number){const m=/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);if(!m)return hex;return `rgba(${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)},${alpha})`;}
 export function spring(t:number,frequency=17,damping=9){return 1-Math.exp(-Math.max(0,t)*damping)*Math.cos(Math.max(0,t)*frequency);}
@@ -44,21 +45,24 @@ export function drawCaptions(ctx:Context,width:number,height:number,time:number,
  // Wrap phrase fallback text naturally while retaining its one real time
  // window. Every visual token enters together; no word times are invented.
  const group=active.flatMap(word=>word.timing==='segment'?word.text.split(/\s+/).filter(Boolean).map(text=>({...word,text})): [word]);
+ const sourceStyle=s,cached=layoutCache.get(ctx);
+ const reusable=cached?.active===active&&cached.style===sourceStyle&&cached.width===width&&cached.height===height;
+ const resolved=reusable?cached.resolved:resolveTemplateStyles(group,sourceStyle);
+ s=resolved.style;const styles=resolved.styles;
  ctx.save();
  const motion=motionAt(active[0].transitions??s.transitions,time-active[0].start,active.at(-1)!.end-time);
- const cached=layoutCache.get(ctx);
- const layout=modernPresets.has(s.preset)?cached?.active===active&&cached.style===s&&cached.width===width&&cached.height===height?cached.layout:layoutStyledCaption(ctx,width,height,group,s):undefined;
- if(layout){layoutCache.set(ctx,{active,style:s,width,height,layout});setCaptionFont(ctx,s,layout.fontSize);}
+ const layout=modernPresets.has(s.preset)||styles?reusable?cached.layout:layoutStyledCaption(ctx,width,height,group,s,styles):undefined;
+ if(layout){layoutCache.set(ctx,{active,style:sourceStyle,width,height,layout,resolved});setCaptionFont(ctx,s,layout.fontSize);}
  const fitted=layout?fitCaptionMotion(layout.bounds,layout.safe,motion,Math.min(width,height)/720):undefined;
  const cx=fitted?.cx??width*(s.positionX??50)/100,cy=fitted?.cy??height*s.position/100;
  ctx.translate(fitted?.x??cx+motion.x*Math.min(width,height)/720,fitted?.y??cy+motion.y*Math.min(width,height)/720);ctx.rotate(motion.rotate);ctx.scale(fitted?.scale??motion.scale,fitted?.scale??motion.scale);ctx.translate(-cx,-cy);
- if(s.preset==='handwritten'&&!group.some(w=>w.wordTransitions)){const bounds=drawHandwritten(ctx,width,height,time,group,s,motion.alpha);ctx.restore();return bounds;}
+ if(!styles&&s.preset==='handwritten'&&!group.some(w=>w.wordTransitions)){const bounds=drawHandwritten(ctx,width,height,time,group,s,motion.alpha);ctx.restore();return bounds;}
  const unit=Math.min(width,height)/720, strength=s.strength/100;
  let fs=layout?.fontSize??s.size*unit;
  const fontFamily=`"${s.font}", "Noto Sans Devanagari", sans-serif`;
  const weight=s.weight??(s.preset==='handwritten'?400:s.preset==='cinematic'?600:800);
- const texts=group.map(w=>s.uppercase?w.text.toLocaleUpperCase():w.text);
- let widths:number[]=layout?group.map(w=>ctx.measureText(s.uppercase?w.text.toLocaleUpperCase():w.text).width):[];let lines:number[][]=layout?layout.lines.map(line=>line.indices):[];let gap=layout?.gap??0;
+ const texts=group.map((w,i)=>(styles?.[i]??s).uppercase?w.text.toLocaleUpperCase():w.text);
+ let widths:number[]=layout?group.map((_,i)=>layout.tokens.find(t=>t.index===i)!.width):[];let lines:number[][]=layout?layout.lines.map(line=>line.indices):[];let gap=layout?.gap??0;
  // Fit the whole phrase in two lines, including unusually long manual words.
  for(let attempt=0;!layout&&attempt<12;attempt++){
   ctx.font=`${s.italic?"italic ":""}${weight} ${fs}px ${fontFamily}`;gap=fs*.24;
@@ -81,9 +85,12 @@ export function drawCaptions(ctx:Context,width:number,height:number,time:number,
   const lineWidth=layout?.lines[li].width??line.reduce((acc,i)=>acc+widths[i],0)+gap*(line.length-1);
   let x=layout?.lines[li].x??baseX-lineWidth/2+(s.align==='left'?-(maxWidth-lineWidth)/2:s.align==='right'?(maxWidth-lineWidth)/2:0);
   const y=layout?.lines[li].y??baseY+(li-(lines.length-1)/2)*lineHeight+(cinematic?(1-enter)*fs*.2*strength:0);
-  if(s.background){ctx.save();ctx.fillStyle=s.background;ctx.fillRect(x-fs*.2,y-fs*.68,lineWidth+fs*.4,fs*1.36);ctx.restore();}
-  if(s.box==='line-pill'&&s.boxColor){ctx.save();ctx.fillStyle=s.boxColor;ctx.beginPath();ctx.roundRect(x-fs*.35,y-fs*.68,lineWidth+fs*.7,fs*1.36,fs*.34);ctx.fill();ctx.restore();}
+  if(!styles&&s.background){ctx.save();ctx.fillStyle=s.background;ctx.fillRect(x-fs*.2,y-fs*.68,lineWidth+fs*.4,fs*1.36);ctx.restore();}
+  if(!styles&&s.box==='line-pill'&&s.boxColor){ctx.save();ctx.fillStyle=s.boxColor;ctx.beginPath();ctx.roundRect(x-fs*.35,y-fs*.68,lineWidth+fs*.7,fs*1.36,fs*.34);ctx.fill();ctx.restore();}
+  const baseStyle=s,baseFontSize=fs;
   line.forEach(i=>{
+   const s=styles?.[i]??baseStyle,fs=layout?.tokens.find(t=>t.index===i)?.fontSize??baseFontSize,strength=s.strength/100;
+   const cinematic=s.preset==='cinematic';
    const word=group[i],active=time>=word.start&&time<word.end,age=Math.max(0,time-word.start),future=time<word.start;
    if(s.charReveal&&future){x+=widths[i]+gap;return;}
    let scale=1,dy=0,angle=0;
@@ -100,9 +107,9 @@ export function drawCaptions(ctx:Context,width:number,height:number,time:number,
    if(!future && s.preset==='gradkey'&&(active||word.emphasis))scale*=(s.emphasisScale??1.3);
    if(s.riseFade&&!future)dy=(1-clamp(age/.25))*fs*.3*strength;
    const emphasized=active||word.emphasis;
-   const wm=motionAt(word.wordTransitions,time-word.start,word.end-time);
+   const wm=motionAt(word.wordTransitions??(styles?word.styleOverride?.transitions:undefined),time-word.start,word.end-time);
    const token=layout?.tokens.find(token=>token.index===i);
-   ctx.save();ctx.globalAlpha*=wm.alpha;
+   ctx.save();if(styles)setCaptionFont(ctx,s,fs);ctx.globalAlpha*=wm.alpha;
    if((s.riseFade||s.fadeIn)&&future)ctx.globalAlpha=0;
    if(s.fadeIn&&!future)ctx.globalAlpha*=clamp(age/.35);
    if(s.riseFade&&!future)ctx.globalAlpha*=clamp(age/.25);
@@ -111,6 +118,7 @@ export function drawCaptions(ctx:Context,width:number,height:number,time:number,
    ctx.shadowColor=`rgba(0,0,0,${s.shadow/100})`;ctx.shadowBlur=s.shadow/100*fs*.24;ctx.shadowOffsetY=s.shadow/100*fs*.08;
    if(s.glow){ctx.shadowColor=s.accent;ctx.shadowBlur=s.glow/100*fs*.6;ctx.shadowOffsetY=0;}
    if(s.offsetShadow){ctx.shadowColor=s.accent;ctx.shadowBlur=s.shadow/100*fs*.12;ctx.shadowOffsetX=s.offsetShadow/100*fs*.22;ctx.shadowOffsetY=s.shadow/100*fs*.08;}
+   if(styles&&(s.box==='line-pill'||s.background)){ctx.fillStyle=s.background??s.boxColor??s.accent;ctx.beginPath();ctx.roundRect(-widths[i]/2-fs*.3,-fs*.68,widths[i]+fs*.6,fs*1.36,fs*.34);ctx.fill();}
    if(s.preset==='power'&&emphasized){ctx.fillStyle=s.accent;ctx.beginPath();ctx.roundRect(-widths[i]/2-fs*.12,-fs*.65,widths[i]+fs*.24,fs*1.3,fs*.1);ctx.fill();ctx.shadowColor='transparent';}
    if(s.box==='word-pill'&&s.boxColor&&(!s.charReveal||!future)){ctx.fillStyle=s.boxColor;ctx.beginPath();ctx.roundRect(-widths[i]/2-fs*.22,-fs*.68,widths[i]+fs*.44,fs*1.36,fs*.3);ctx.fill();}
    if(s.box==='glass'&&s.boxColor){ctx.fillStyle=hexToRgba(s.boxColor,.22);ctx.beginPath();ctx.roundRect(-widths[i]/2-fs*.22,-fs*.68,widths[i]+fs*.44,fs*1.36,fs*.34);ctx.fill();}
