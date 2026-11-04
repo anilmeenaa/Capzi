@@ -1,6 +1,6 @@
 import type { CaptionStyle, Transitions, Word } from './types';
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
-export const modernPresets = new Set(['sticker','blast','retro','glass','scribble','akshar','boxkaraoke','pillline','wide','neon','risefade','scalegreen','gradkey','haathorange','harabox','peelamarker','gulabibox','laloutline','narangichhaya','neelneon','typewriter','dheereglow']);
+export const modernPresets = new Set(['reelserif','reelice','reelbuild','reelstack','sticker','blast','retro','glass','scribble','akshar','boxkaraoke','pillline','wide','neon','risefade','scalegreen','gradkey','haathorange','harabox','peelamarker','gulabibox','laloutline','narangichhaya','neelneon','typewriter','dheereglow']);
 export type Bounds={x:number;y:number;width:number;height:number};
 export type TokenLayout={index:number;width:number;x:number;y:number;halfWidth:number;halfHeight:number;fontSize:number};
 export type CaptionLayout={fontSize:number;gap:number;tokens:TokenLayout[];lines:{indices:number[];x:number;y:number;width:number}[];bounds:Bounds;safe:Bounds};
@@ -27,7 +27,7 @@ export function setCaptionFont(ctx:Context,s:CaptionStyle,fs:number){
  if('letterSpacing' in ctx)ctx.letterSpacing=`${(s.letterSpacing??0)*fs/s.size}px`;
  ctx.textAlign='center';ctx.textBaseline='middle';
 }
-export function layoutStyledCaption(ctx:Context,width:number,height:number,group:Word[],s:CaptionStyle,styles?:CaptionStyle[]):CaptionLayout{
+export function layoutStyledCaption(ctx:Context,width:number,height:number,group:Word[],s:CaptionStyle,styles?:CaptionStyle[],rowBreaks?:Set<number>):CaptionLayout{
  const unit=Math.min(width,height)/720;
  const safe={x:width*.06,y:height*.05,width:width*.88,height:height*.9};
  const texts=group.map((w,i)=>(styles?.[i]??s).uppercase?w.text.toLocaleUpperCase():w.text);
@@ -61,7 +61,7 @@ export function layoutStyledCaption(ctx:Context,width:number,height:number,group
   const rows:{indices:number[];width:number;halfHeight:number}[]=[{indices:[],width:0,halfHeight:0}];
   for(const slot of slots){
    let row=rows.at(-1)!;
-   if(row.indices.length&&row.width+gap+slot.halfWidth*2+linePad*2>safe.width-shadow*2){row={indices:[],width:0,halfHeight:0};rows.push(row);}
+   if(row.indices.length&&(rowBreaks?.has(slot.index)||row.width+gap+slot.halfWidth*2+linePad*2>safe.width-shadow*2)){row={indices:[],width:0,halfHeight:0};rows.push(row);}
    row.width+=(row.indices.length?gap:0)+slot.halfWidth*2;row.halfHeight=Math.max(row.halfHeight,slot.halfHeight);row.indices.push(slot.index);
   }
   const contentWidth=Math.max(...rows.map(r=>r.width+linePad*2)),contentHeight=rows.reduce((n,r)=>n+r.halfHeight*2,0)+gap*(rows.length-1);

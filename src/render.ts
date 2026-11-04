@@ -1,10 +1,11 @@
 import type { CaptionStyle, Word } from './types';
+import { referenceLook } from './reference-looks';
 import { resolveTemplateStyles } from './template-overrides';
 import { motionAt } from './motion';
 import { activeGroup } from './captions';
 import { layoutStyledCaption, fitCaptionMotion, modernPresets, setCaptionFont, type CaptionLayout } from './caption-layout';
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
-const layoutCache=new WeakMap<Context,{active:Word[];style:CaptionStyle;width:number;height:number;layout:CaptionLayout;resolved:ReturnType<typeof resolveTemplateStyles>}>();
+const layoutCache=new WeakMap<Context,{active:Word[];style:CaptionStyle;width:number;height:number;layout:CaptionLayout;displayKey:string;resolved:ReturnType<typeof resolveTemplateStyles>}>();
 const clamp=(v:number)=>Math.max(0,Math.min(1,v));
 function hexToRgba(hex:string,alpha:number){const m=/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);if(!m)return hex;return `rgba(${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)},${alpha})`;}
 export function spring(t:number,frequency=17,damping=9){return 1-Math.exp(-Math.max(0,t)*damping)*Math.cos(Math.max(0,t)*frequency);}
@@ -44,15 +45,16 @@ export function drawCaptions(ctx:Context,width:number,height:number,time:number,
  const active=activeGroup(groups,time);if(!active)return;
  // Wrap phrase fallback text naturally while retaining its one real time
  // window. Every visual token enters together; no word times are invented.
- const group=active.flatMap(word=>word.timing==='segment'?word.text.split(/\s+/).filter(Boolean).map(text=>({...word,text})): [word]);
+ const originalGroup=active.flatMap(word=>word.timing==='segment'?word.text.split(/\s+/).filter(Boolean).map(text=>({...word,text})): [word]);
+ const look=referenceLook(originalGroup,s,time),group=look.group;if(!group.length)return;
  const sourceStyle=s,cached=layoutCache.get(ctx);
- const reusable=cached?.active===active&&cached.style===sourceStyle&&cached.width===width&&cached.height===height;
- const resolved=reusable?cached.resolved:resolveTemplateStyles(group,sourceStyle);
+ const reusable=cached?.displayKey===look.key&&cached?.active===active&&cached.style===sourceStyle&&cached.width===width&&cached.height===height;
+ const resolved=reusable?cached.resolved:{style:look.style,styles:look.styles};
  s=resolved.style;const styles=resolved.styles;
  ctx.save();
  const motion=motionAt(active[0].transitions??s.transitions,time-active[0].start,active.at(-1)!.end-time);
- const layout=modernPresets.has(s.preset)||styles?reusable?cached.layout:layoutStyledCaption(ctx,width,height,group,s,styles):undefined;
- if(layout){layoutCache.set(ctx,{active,style:sourceStyle,width,height,layout,resolved});setCaptionFont(ctx,s,layout.fontSize);}
+ const layout=modernPresets.has(s.preset)||styles?reusable?cached.layout:layoutStyledCaption(ctx,width,height,group,s,styles,look.rows):undefined;
+ if(layout){layoutCache.set(ctx,{active,style:sourceStyle,width,height,layout,displayKey:look.key,resolved});setCaptionFont(ctx,s,layout.fontSize);}
  const fitted=layout?fitCaptionMotion(layout.bounds,layout.safe,motion,Math.min(width,height)/720):undefined;
  const cx=fitted?.cx??width*(s.positionX??50)/100,cy=fitted?.cy??height*s.position/100;
  ctx.translate(fitted?.x??cx+motion.x*Math.min(width,height)/720,fitted?.y??cy+motion.y*Math.min(width,height)/720);ctx.rotate(motion.rotate);ctx.scale(fitted?.scale??motion.scale,fitted?.scale??motion.scale);ctx.translate(-cx,-cy);
@@ -92,6 +94,7 @@ export function drawCaptions(ctx:Context,width:number,height:number,time:number,
    const s=styles?.[i]??baseStyle,fs=layout?.tokens.find(t=>t.index===i)?.fontSize??baseFontSize,strength=s.strength/100;
    const cinematic=s.preset==='cinematic';
    const word=group[i],active=time>=word.start&&time<word.end,age=Math.max(0,time-word.start),future=time<word.start;
+   if(styles&&((s.reveal==='single'&&!active)||(s.reveal==='build'&&future))){x+=widths[i]+gap;return;}
    if(s.charReveal&&future){x+=widths[i]+gap;return;}
    let scale=1,dy=0,angle=0;
    if(!future && s.preset==='impact'){scale=1+(spring(age,22,11)-1)*.35*strength; if(active)scale+=.04*strength;}
@@ -127,6 +130,7 @@ export function drawCaptions(ctx:Context,width:number,height:number,time:number,
    if(s.rectBox&&s.boxColor){ctx.fillStyle=s.boxColor;ctx.fillRect(-widths[i]/2-fs*.2,-fs*.68,widths[i]+fs*.4,fs*1.36);}
    if(s.stroke>0){ctx.strokeStyle=s.strokeColor;ctx.lineWidth=s.stroke*unit*2;if(!s.charReveal)ctx.strokeText(texts[i],0,0);}
    ctx.fillStyle=(s.preset==='power'||s.marker)&&emphasized?'#15151c':s.preset==='boxkaraoke'&&active||s.box==='word-pill'||s.rectBox||s.offsetShadow?s.color:emphasized&&!cinematic?s.accent:s.color;
+   if(s.ice){const g=ctx.createLinearGradient(-widths[i]/2,-fs*.5,widths[i]/2,fs*.5);g.addColorStop(0,s.color);g.addColorStop(.25,s.color);g.addColorStop(.36,s.accent);g.addColorStop(.49,s.color);g.addColorStop(1,s.color);ctx.fillStyle=g;}
    if(s.gradient&&emphasized){const g=ctx.createLinearGradient(-widths[i]/2,0,widths[i]/2,0);g.addColorStop(0,s.accent);g.addColorStop(1,'#ffc46b');ctx.fillStyle=g;}
    if(future&&(s.preset==='impact'||s.preset==='desi'))ctx.globalAlpha*=.86;
    if(s.preset==='wide'){ctx.globalAlpha*=future?0:clamp(age/.4);}
