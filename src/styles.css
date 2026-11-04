@@ -66,3 +66,5 @@ body,.editor{background:var(--bg);color:var(--text)}
 
 /* Reference-inspired editable looks; plain backgrounds keep type legible. */
 .preset-art.reelserif{background:#3b332d}.preset-art.reelice{background:#111b24}.preset-art.reelbuild{background:#242424}.preset-art.reelstack{background:#101512}
+
+.preset-art.reelpaper{background:#302a22}.preset-art.reelcontrast{background:#111313}.preset-art.reelfrost{background:#162027}

@@ -28,5 +28,26 @@ it('recovered phrase timings are not split into guessed word times',()=>{
  expect(referenceLook(w,style('reelice'),1).group).toEqual(w);
 });
 it('all new fonts and reference flags survive project validation',()=>{
- for(const id of ['reelserif','reelice','reelbuild','reelstack'])expect(validateWords([{...words[0],styleOverride:style(id)}])[0].styleOverride).toMatchObject(style(id));
+ for(const id of ['reelserif','reelice','reelbuild','reelstack','reelpaper','reelcontrast','reelfrost'])expect(validateWords([{...words[0],styleOverride:style(id)}])[0].styleOverride).toMatchObject(style(id));
+});
+
+it('scarlet stack roles stay stable across progressive reveal',()=>{
+ const full=referenceLook(words,style('reelcontrast'),2.3),early=referenceLook(words,style('reelcontrast'),.2);
+ expect(early.styles![0]).toEqual(full.styles![0]);
+ expect(full.styles!.map(s=>s.font)).toEqual(['Great Vibes','Barlow Condensed','Roboto Slab']);
+ expect(full.styles!.map(s=>s.color)).toEqual(['#faf9f4','#ed1235','#21bf8e']);
+ expect([...full.rows]).toEqual([1,2]);
+ expect(referenceLook(words,{...style('reelcontrast'),lines:1},2.3).rows.size).toBe(0);
+});
+it('scarlet custom colors survive validation without changing words or times',()=>{
+ const s={...style('reelcontrast'),secondaryAccent:'#ffee00'};
+ expect(referenceLook(words,s,2.3).styles![2].color).toBe('#ffee00');
+ expect(validateWords([{...words[0],styleOverride:s}])[0].styleOverride!.secondaryAccent).toBe('#ffee00');
+ expect(()=>validateWords([{...words[0],styleOverride:{...s,secondaryAccent:'invalid'}}])).toThrow();
+ expect(referenceLook(words,s,2.3).group).toEqual(words);
+});
+it('the second icy look respects real gaps and tall phrases build without rewriting',()=>{
+ expect(referenceLook(words,style('reelfrost'),.9).group).toEqual([]);
+ expect(referenceLook(words,style('reelfrost'),1.2).group).toEqual([words[1]]);
+ expect(referenceLook(words,style('reelpaper'),1.2).group).toEqual(words.slice(0,2));
 });
