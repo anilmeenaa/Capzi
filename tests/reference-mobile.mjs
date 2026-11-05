@@ -12,7 +12,7 @@ try{
   const context=await browser.newContext(viewport),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base);await page.waitForFunction(()=>document.querySelector('video')?.readyState>=2);
   await page.getByRole('button',{name:'Templates',exact:true}).first().click();
-  for(const name of process.env.FRAME_TEMPLATE_ONLY?[process.env.FRAME_TEMPLATE_ONLY]:['Tall Paper','Frost Punch','Scarlet Script']){
+  for(const name of process.env.FRAME_TEMPLATE_ONLY?[process.env.FRAME_TEMPLATE_ONLY]:['Paper Riot','Frost Bite','Scarlet Fever']){
    const card=page.getByRole('button',{name:new RegExp('^'+name)});await card.click();assert.equal(await card.getAttribute('aria-pressed'),'true');
    await page.getByRole('button',{name:'Use template layout',exact:true}).click();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   }

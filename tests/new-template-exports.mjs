@@ -7,7 +7,7 @@ const reference=process.env.FRAME_REFERENCE_TEMPLATES==='1',width=reference?720:
 const root=new URL('../',import.meta.url).pathname,out=root+'test-results/new-template-exports';mkdirSync(out,{recursive:true});
 execFileSync('ffmpeg',['-y','-v','error','-f','lavfi','-i',`color=c=0x202020:s=${width}x${height}:r=30:d=2`,'-f','lavfi','-i','sine=frequency=440:sample_rate=48000:duration=2','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-shortest',out+'/source.mp4']);
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4322'],{stdio:'pipe'});let browser;
-const names=reference?['Film Diary','Ice Word','Momentum White','Neon Editorial','Tall Paper','Scarlet Script','Frost Punch','cutee']:['Uthta Glow','Bada Scale','Gradient Keyword','Haath Orange','Hara Box','Peela Marker','Gulabi Dabba','Lal Outline','Narangi Chhaya','Neon Neela','Typewriter Akshar','Dheere Glow'];
+const names=reference?['Velvet Diary','Ice Breaker','White Thunder','Neon Rebel','Paper Riot','Scarlet Fever','Frost Bite','cutee']:['Ghost Rise','Toxic Glow','Solar Flare','Orange Ink','Mint Mayhem','Lemon Flash','Pink Panic','Red Alert','Tangerine Echo','Electric Ice','Key Smash','Velvet Glow'];
 try{
  for(let i=0;i<60;i++){try{if((await fetch('http://127.0.0.1:4322')).ok)break;}catch{}await new Promise(r=>setTimeout(r,200));}
  browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox','--disable-dev-shm-usage']});const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true}),errors=[];page.on('pageerror',e=>errors.push(e.message));
