@@ -1,6 +1,6 @@
 import type { CaptionStyle, Transitions, Word } from './types';
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
-export const modernPresets = new Set(['reelpaper','reelcontrast','reelfrost','reelserif','reelice','reelbuild','reelstack','sticker','blast','retro','glass','scribble','akshar','boxkaraoke','pillline','wide','neon','risefade','scalegreen','gradkey','haathorange','harabox','peelamarker','gulabibox','laloutline','narangichhaya','neelneon','typewriter','dheereglow']);
+export const modernPresets = new Set(['cutee','reelpaper','reelcontrast','reelfrost','reelserif','reelice','reelbuild','reelstack','sticker','blast','retro','glass','scribble','akshar','boxkaraoke','pillline','wide','neon','risefade','scalegreen','gradkey','haathorange','harabox','peelamarker','gulabibox','laloutline','narangichhaya','neelneon','typewriter','dheereglow']);
 export type Bounds={x:number;y:number;width:number;height:number};
 export type TokenLayout={index:number;width:number;x:number;y:number;halfWidth:number;halfHeight:number;fontSize:number};
 export type CaptionLayout={fontSize:number;gap:number;tokens:TokenLayout[];lines:{indices:number[];x:number;y:number;width:number}[];bounds:Bounds;safe:Bounds};
@@ -65,6 +65,8 @@ export function layoutStyledCaption(ctx:Context,width:number,height:number,group
    row.width+=(row.indices.length?gap:0)+slot.halfWidth*2;row.halfHeight=Math.max(row.halfHeight,slot.halfHeight);row.indices.push(slot.index);
   }
   const contentWidth=Math.max(...rows.map(r=>r.width+linePad*2)),contentHeight=rows.reduce((n,r)=>n+r.halfHeight*2,0)+gap*(rows.length-1);
+  // Sticker doodles and the white outer edge must fit in the same safe area.
+  if(s.preset==='cutee'||styles?.some(s=>s.preset==='cutee'))shadow=Math.max(shadow,fs*.65);
   return {slots,rows,contentWidth,contentHeight,gap,shadow,linePad};
  };
  let fs=s.size*unit,measured=measure(fs);

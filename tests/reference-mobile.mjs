@@ -12,13 +12,13 @@ try{
   const context=await browser.newContext(viewport),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base);await page.waitForFunction(()=>document.querySelector('video')?.readyState>=2);
   await page.getByRole('button',{name:'Templates',exact:true}).first().click();
-  for(const name of ['Tall Paper','Frost Punch','Scarlet Script']){
+  for(const name of process.env.FRAME_TEMPLATE_ONLY?[process.env.FRAME_TEMPLATE_ONLY]:['Paper Riot','Frost Bite','Scarlet Fever']){
    const card=page.getByRole('button',{name:new RegExp('^'+name)});await card.click();assert.equal(await card.getAttribute('aria-pressed'),'true');
    await page.getByRole('button',{name:'Use template layout',exact:true}).click();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   }
   await page.getByRole('button',{name:'Close editing panel',exact:true}).last().click();await page.getByRole('button',{name:'Text',exact:true}).first().click();
-  const color=page.getByLabel('Secondary accent color',{exact:true});assert.equal(await color.inputValue(),'#21bf8e');await color.fill('#ffee00');await page.waitForTimeout(650);
-  await page.getByRole('button',{name:'Close editing panel',exact:true}).last().click();await page.getByRole('button',{name:'Undo',exact:true}).click();await page.getByRole('button',{name:'Text',exact:true}).first().click();assert.equal(await color.inputValue(),'#21bf8e');
+  const color=page.getByLabel('Secondary accent color',{exact:true});assert.equal(await color.inputValue(),(process.env.FRAME_TEMPLATE_ONLY==='cutee'?'#f59abe':'#21bf8e'));await color.fill('#ffee00');await page.waitForTimeout(650);
+  await page.getByRole('button',{name:'Close editing panel',exact:true}).last().click();await page.getByRole('button',{name:'Undo',exact:true}).click();await page.getByRole('button',{name:'Text',exact:true}).first().click();assert.equal(await color.inputValue(),(process.env.FRAME_TEMPLATE_ONLY==='cutee'?'#f59abe':'#21bf8e'));
   await page.getByRole('button',{name:'Close editing panel',exact:true}).last().click();await page.getByRole('button',{name:'Redo',exact:true}).click();await page.waitForTimeout(650);await page.reload();await page.getByRole('button',{name:'Text',exact:true}).first().click();assert.equal(await color.inputValue(),'#ffee00');
   assert.equal(await page.getByLabel('Font family',{exact:true}).locator('option').filter({hasText:'Six Caps'}).count(),1);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);mkdirSync(root+'test-results',{recursive:true});await page.screenshot({path:root+`test-results/reference-mobile-${viewport.viewport.width}.png`});await context.close();

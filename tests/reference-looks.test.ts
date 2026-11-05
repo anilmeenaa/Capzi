@@ -28,7 +28,7 @@ it('recovered phrase timings are not split into guessed word times',()=>{
  expect(referenceLook(w,style('reelice'),1).group).toEqual(w);
 });
 it('all new fonts and reference flags survive project validation',()=>{
- for(const id of ['reelserif','reelice','reelbuild','reelstack','reelpaper','reelcontrast','reelfrost'])expect(validateWords([{...words[0],styleOverride:style(id)}])[0].styleOverride).toMatchObject(style(id));
+ for(const id of ['reelserif','reelice','reelbuild','reelstack','reelpaper','reelcontrast','reelfrost','cutee'])expect(validateWords([{...words[0],styleOverride:style(id)}])[0].styleOverride).toMatchObject(style(id));
 });
 
 it('scarlet stack roles stay stable across progressive reveal',()=>{
@@ -50,4 +50,10 @@ it('the second icy look respects real gaps and tall phrases build without rewrit
  expect(referenceLook(words,style('reelfrost'),.9).group).toEqual([]);
  expect(referenceLook(words,style('reelfrost'),1.2).group).toEqual([words[1]]);
  expect(referenceLook(words,style('reelpaper'),1.2).group).toEqual(words.slice(0,2));
+});
+
+it('cutee balances two rows and respects a single-line override without changing timing',()=>{
+ const look=referenceLook(words,style('cutee'),1.2);
+ expect([...look.rows]).toEqual([2]);expect(look.group).toEqual(words);
+ expect(referenceLook(words,{...style('cutee'),lines:1},1.2).rows.size).toBe(0);
 });

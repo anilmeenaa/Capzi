@@ -1,0 +1,11 @@
+# cutee
+
+Based on the uploaded 39.147-second, 720 × 1280 venue reel, inspected at full resolution and at eight frames per second during the opening caption transition.
+
+The dominant recurring caption treatment uses rounded black letters, a thick pale cream glyph outline, a fine white outer edge, pink checked tape, a pink underline and a small heart with white motion marks. Text enters quickly from left to right. The editable `cutee` preset recreates these elements with bundled Nunito 900 and independently drawn Canvas vector details. No reference media or artwork is distributed. The exact original font is not identifiable from the video; Nunito is a close licensed alternative.
+
+The reference also contains other shot-specific title cards and changes caption placement between shots. This preset reproduces the recurring cream/pink sticker treatment. Position is editable; “Use template layout” applies the recommended placement and grouping explicitly. Text, cream outline, pink secondary accent, size, shadow, grouping and motion strength remain editable. Strength controls the heart motion; the short letter entrance remains part of the look. Individual-word template overrides retain the outlined text; the shared phrase doodles appear when the whole caption uses cutee.
+
+Preview and MP4 export use the same rendering function. Doodle space is reserved during caption fitting, including extreme positions. Actual word times and transcript contents remain unchanged. No model downloads or runtime dependencies were added.
+
+Verification: 83 unit tests and the TypeScript/Vite production build passed. The shared layout suite passed 480 cases / 3,840 frames with no detected overflow or overlap across aspect ratios and extreme settings. Mobile browser tests at 360 px and Pixel 7 size passed template application, placement, pink color editing, undo/redo and reload persistence. A real two-second 720 × 1280 MP4 with original audio was fully decoded and its caption frames compared against the preview at four times. Tests use deterministic local footage with imported subtitles, not speech-recognition inference. Physical Android hardware was not tested. An audio unit test initially timed out while concurrent browser tests were running; the complete suite passed when rerun without that load.

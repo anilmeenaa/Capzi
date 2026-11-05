@@ -14,7 +14,7 @@ try{
  const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true});const errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:4176');await page.waitForFunction(()=>document.querySelector('video')?.readyState>=2);
- assert.equal(await page.getByRole('button',{name:/Reel Handwritten/}).getAttribute('aria-pressed'),'true');
+ assert.equal(await page.getByRole('button',{name:/Ink Crush/}).getAttribute('aria-pressed'),'true');
  await page.getByRole('slider',{name:'Seek video'}).fill('1.15');await page.waitForTimeout(300);
  await page.screenshot({path:root+'test-results/handwritten-desktop.png',fullPage:true});
  await page.getByRole('button',{name:'Transcript',exact:true}).click();

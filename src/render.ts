@@ -1,4 +1,5 @@
 import type { CaptionStyle, Word } from './types';
+import { drawCuteeDoodles } from './cutee';
 import { referenceLook } from './reference-looks';
 import { resolveTemplateStyles } from './template-overrides';
 import { motionAt } from './motion';
@@ -128,6 +129,11 @@ export function drawCaptions(ctx:Context,width:number,height:number,time:number,
    if(s.preset==='boxkaraoke'&&active){ctx.fillStyle=s.accent;ctx.beginPath();ctx.roundRect(-widths[i]/2-fs*.14,-fs*.65,widths[i]+fs*.28,fs*1.3,fs*.12);ctx.fill();ctx.shadowColor='transparent';}
    if(s.marker&&emphasized){ctx.save();ctx.fillStyle=s.accent;ctx.globalAlpha*=.92;ctx.rotate(-.02);ctx.fillRect(-widths[i]/2-fs*.14,-fs*.68,widths[i]+fs*.28,fs*1.36);ctx.restore();}
    if(s.rectBox&&s.boxColor){ctx.fillStyle=s.boxColor;ctx.fillRect(-widths[i]/2-fs*.2,-fs*.68,widths[i]+fs*.4,fs*1.36);}
+   if(s.preset==='cutee'){
+    const reveal=clamp((time-group[0].start-i*.025)/.22);
+    ctx.beginPath();ctx.rect(-widths[i]/2-fs*.3,-fs*1.4,(widths[i]+fs*.6)*reveal,fs*2.8);ctx.clip();
+    ctx.strokeStyle='#fffdf6';ctx.lineWidth=s.stroke*unit*2+fs*.07;ctx.strokeText(texts[i],0,0);
+   }
    if(s.stroke>0){ctx.strokeStyle=s.strokeColor;ctx.lineWidth=s.stroke*unit*2;if(!s.charReveal)ctx.strokeText(texts[i],0,0);}
    ctx.fillStyle=(s.preset==='power'||s.marker)&&emphasized?'#15151c':s.preset==='boxkaraoke'&&active||s.box==='word-pill'||s.rectBox||s.offsetShadow?s.color:emphasized&&!cinematic?s.accent:s.color;
    if(s.ice){const g=ctx.createLinearGradient(-widths[i]/2,-fs*.5,widths[i]/2,fs*.5);g.addColorStop(0,s.color);g.addColorStop(.25,s.color);g.addColorStop(.36,s.accent);g.addColorStop(.49,s.color);g.addColorStop(1,s.color);ctx.fillStyle=g;}
@@ -159,6 +165,7 @@ export function drawCaptions(ctx:Context,width:number,height:number,time:number,
    ctx.restore();x+=widths[i]+gap;
   });
  });
+ if(s.preset==='cutee'&&!styles&&layout)drawCuteeDoodles(ctx,layout,time-group[0].start,s);
  ctx.restore();
  return fitted?.bounds??{x:baseX-maxWidth/2-pad,y:baseY-lineHeight*lines.length/2-pad,width:maxWidth+2*pad,height:lineHeight*lines.length+2*pad};
 }

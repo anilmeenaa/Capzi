@@ -7,6 +7,7 @@ export function referenceLook(words:Word[],base:CaptionStyle,time:number){
  if(!styles&&s.reveal==='single')group=words.filter(w=>time>=w.start&&time<w.end);
  if(!styles&&s.reveal==='build')group=words.filter(w=>time>=w.start);
  const rows=new Set<number>();
+ if(!styles&&s.preset==='cutee'&&(s.lines??2)>=2&&group.length>=3)rows.add(Math.ceil(group.length/2));
  if(!styles&&s.preset==='reelstack'&&group.length){
   const marked=words.findIndex(w=>w.emphasis),key=marked>=0?marked:Math.floor(words.length/2);
   if((s.lines??2)>=3){rows.add(key);rows.add(key+1);}
