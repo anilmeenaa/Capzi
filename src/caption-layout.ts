@@ -1,6 +1,6 @@
 import type { CaptionStyle, Transitions, Word } from './types';
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
-export const modernPresets = new Set(['cutee','reelpaper','reelcontrast','reelfrost','reelserif','reelice','reelbuild','reelstack','sticker','blast','retro','glass','scribble','akshar','boxkaraoke','pillline','wide','neon','risefade','scalegreen','gradkey','haathorange','harabox','peelamarker','gulabibox','laloutline','narangichhaya','neelneon','typewriter','dheereglow']);
+export const modernPresets = new Set(['sitam','junoon','cutee','reelpaper','reelcontrast','reelfrost','reelserif','reelice','reelbuild','reelstack','sticker','blast','retro','glass','scribble','akshar','boxkaraoke','pillline','wide','neon','risefade','scalegreen','gradkey','haathorange','harabox','peelamarker','gulabibox','laloutline','narangichhaya','neelneon','typewriter','dheereglow']);
 export type Bounds={x:number;y:number;width:number;height:number};
 export type TokenLayout={index:number;width:number;x:number;y:number;halfWidth:number;halfHeight:number;fontSize:number};
 export type CaptionLayout={fontSize:number;gap:number;tokens:TokenLayout[];lines:{indices:number[];x:number;y:number;width:number}[];bounds:Bounds;safe:Bounds};

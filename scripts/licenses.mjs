@@ -13,7 +13,7 @@ for(const [dir,meta] of Object.entries(lock.packages)){
  for(const n of names)output+='\n'+n+'\n'+fs.readFileSync(path.join(dir,n),'utf8')+'\n';
 }
 // Font files distributed directly rather than through npm also need notices.
-output+='\n\nReference template fonts (locally bundled)\nInstrument Serif and Great Vibes: SIL OFL 1.1, Google Fonts ofl/instrumentserif and ofl/greatvibes.\nRoboto Slab: Apache 2.0, Google Fonts apache/robotoslab.\nSix Caps: SIL OFL 1.1, https://github.com/google/fonts/tree/main/ofl/sixcaps.\n';
-for(const name of ['greatvibes-OFL.txt','instrumentserif-OFL.txt','robotoslab-LICENSE.txt','sixcaps-OFL.txt'])output+='\n'+name+'\n'+fs.readFileSync(path.join('public/fonts/references',name),'utf8').replace(/[ \t]+$/gm,'')+'\n';
+output+='\n\nReference template fonts (locally bundled)\nInstrument Serif and Great Vibes: SIL OFL 1.1, Google Fonts ofl/instrumentserif and ofl/greatvibes.\nRoboto Slab: Apache 2.0, Google Fonts apache/robotoslab.\nRozha One and Khand: SIL OFL 1.1, Google Fonts ofl/rozhaone and ofl/khand.\nSix Caps: SIL OFL 1.1, https://github.com/google/fonts/tree/main/ofl/sixcaps.\n';
+for(const name of ['greatvibes-OFL.txt','instrumentserif-OFL.txt','robotoslab-LICENSE.txt','sixcaps-OFL.txt','rozhaone-OFL.txt','khand-OFL.txt'])output+='\n'+name+'\n'+fs.readFileSync(path.join('public/fonts/references',name),'utf8').replace(/[ \t]+$/gm,'')+'\n';
 fs.mkdirSync('docs',{recursive:true});fs.writeFileSync('docs/dependency-licenses.json',JSON.stringify(rows,null,2));fs.writeFileSync('public/THIRD_PARTY_NOTICES.txt',output);
 const flagged=rows.filter(x=>/UNKNOWN|AGPL|GPL|SEE LICENSE/i.test(x.license));console.log(JSON.stringify({packages:rows.length,flagged},null,2));
