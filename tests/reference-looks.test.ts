@@ -28,7 +28,7 @@ it('recovered phrase timings are not split into guessed word times',()=>{
  expect(referenceLook(w,style('reelice'),1).group).toEqual(w);
 });
 it('all new fonts and reference flags survive project validation',()=>{
- for(const id of ['reelserif','reelice','reelbuild','reelstack','reelpaper','reelcontrast','reelfrost','cutee'])expect(validateWords([{...words[0],styleOverride:style(id)}])[0].styleOverride).toMatchObject(style(id));
+ for(const id of ['reelserif','reelice','reelbuild','reelstack','reelpaper','reelcontrast','reelfrost','cutee','sitam','junoon'])expect(validateWords([{...words[0],styleOverride:style(id)}])[0].styleOverride).toMatchObject(style(id));
 });
 
 it('scarlet stack roles stay stable across progressive reveal',()=>{
@@ -56,4 +56,17 @@ it('cutee balances two rows and respects a single-line override without changing
  const look=referenceLook(words,style('cutee'),1.2);
  expect([...look.rows]).toEqual([2]);expect(look.group).toEqual(words);
  expect(referenceLook(words,{...style('cutee'),lines:1},1.2).rows.size).toBe(0);
+});
+
+it('Hindi lyric stacks keep whole Unicode words and stable rows at actual times',()=>{
+ const w=['जिसे','पाना','था'].map((text,i)=>({...words[i],text}));
+ const look=referenceLook(w,style('sitam'),1.2);
+ expect(look.group).toEqual(w.slice(0,2));expect([...look.rows]).toEqual([1]);
+ expect(referenceLook(w,{...style('sitam'),lines:1},2.3).rows.size).toBe(0);
+ expect(referenceLook(w,style('junoon'),1.2).group).toEqual([w[1]]);
+ expect(referenceLook(w,style('junoon'),.9).group).toEqual([]);
+});
+it('lyric stacking never forces more rows than requested for longer groups',()=>{
+ const w=Array.from({length:8},(_,i)=>({id:String(i),text:'कहानी',start:i,end:i+1}));
+ expect([...referenceLook(w,{...style('sitam'),lines:3},7.5).rows]).toEqual([3,6]);
 });

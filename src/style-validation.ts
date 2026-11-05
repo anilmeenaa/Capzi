@@ -3,7 +3,7 @@ import { readTransitions } from './motion';
 import type { CaptionStyle } from './types';
 export function safeStyle(value:unknown):CaptionStyle{
  const v=value as CaptionStyle;
- if(!v||!PRESETS.some(p=>p.id===v.preset)||!['Inter','Barlow Condensed','Nunito','Noto Sans Devanagari','Mynerve','Courier New','Instrument Serif','Roboto Slab','Great Vibes','Six Caps'].includes(v.font))throw new Error('Unknown caption style.');
+ if(!v||!PRESETS.some(p=>p.id===v.preset)||!['Inter','Barlow Condensed','Nunito','Noto Sans Devanagari','Mynerve','Courier New','Instrument Serif','Roboto Slab','Great Vibes','Six Caps','Rozha One','Khand'].includes(v.font))throw new Error('Unknown caption style.');
  for(const k of ['color','accent','strokeColor'] as const)if(!/^#[a-f\d]{6}$/i.test(v[k]))throw new Error('Invalid color.');
  for(const [k,min,max] of [['size',24,100],['stroke',0,12],['shadow',0,100],['position',10,90],['strength',0,100],['grouping',1,8]] as const)if(!Number.isFinite(v[k])||v[k]<min||v[k]>max)throw new Error(`Invalid ${k}.`);
  if(v.positionX!==undefined&&(!Number.isFinite(v.positionX)||v.positionX<0||v.positionX>100))throw new Error('Invalid horizontal position.');

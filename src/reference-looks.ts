@@ -7,6 +7,14 @@ export function referenceLook(words:Word[],base:CaptionStyle,time:number){
  if(!styles&&s.reveal==='single')group=words.filter(w=>time>=w.start&&time<w.end);
  if(!styles&&s.reveal==='build')group=words.filter(w=>time>=w.start);
  const rows=new Set<number>();
+ if(!styles&&s.preset==='sitam'){
+  // Stable runs based on the complete phrase, bounded by the user's line count.
+  const perLine=Math.ceil(words.length/(s.lines??3));
+  for(let i=perLine;i<group.length;i+=perLine)rows.add(i);
+  // Optical scale for the large calligraphic treatment, fitted by the shared layout.
+  styles=group.map(()=>({...s,size:s.size*1.7,reveal:undefined}));
+ }
+
  if(!styles&&s.preset==='cutee'&&(s.lines??2)>=2&&group.length>=3)rows.add(Math.ceil(group.length/2));
  if(!styles&&s.preset==='reelstack'&&group.length){
   const marked=words.findIndex(w=>w.emphasis),key=marked>=0?marked:Math.floor(words.length/2);

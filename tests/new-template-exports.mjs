@@ -7,15 +7,16 @@ const reference=process.env.FRAME_REFERENCE_TEMPLATES==='1',width=reference?720:
 const root=new URL('../',import.meta.url).pathname,out=root+'test-results/new-template-exports';mkdirSync(out,{recursive:true});
 execFileSync('ffmpeg',['-y','-v','error','-f','lavfi','-i',`color=c=0x202020:s=${width}x${height}:r=30:d=2`,'-f','lavfi','-i','sine=frequency=440:sample_rate=48000:duration=2','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-shortest',out+'/source.mp4']);
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4322'],{stdio:'pipe'});let browser;
-const names=reference?['Velvet Diary','Ice Breaker','White Thunder','Neon Rebel','Paper Riot','Scarlet Fever','Frost Bite','cutee']:['Ghost Rise','Toxic Glow','Solar Flare','Orange Ink','Mint Mayhem','Lemon Flash','Pink Panic','Red Alert','Tangerine Echo','Electric Ice','Key Smash','Velvet Glow'];
+const names=reference?['Velvet Diary','Ice Breaker','White Thunder','Neon Rebel','Paper Riot','Scarlet Fever','Frost Bite','cutee','Sitam Ink','Laal Junoon']:['Ghost Rise','Toxic Glow','Solar Flare','Orange Ink','Mint Mayhem','Lemon Flash','Pink Panic','Red Alert','Tangerine Echo','Electric Ice','Key Smash','Velvet Glow'];
 try{
  for(let i=0;i<60;i++){try{if((await fetch('http://127.0.0.1:4322')).ok)break;}catch{}await new Promise(r=>setTimeout(r,200));}
  browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox','--disable-dev-shm-usage']});const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:4322');await page.waitForFunction(()=>document.querySelector('video')?.readyState>=2);
  let pick=page.waitForEvent('filechooser');await page.getByRole('button',{name:'Import video',exact:true}).click();await(await pick).setFiles(out+'/source.mp4');await page.getByRole('button',{name:'Close dialog',exact:true}).click();
- pick=page.waitForEvent('filechooser');await page.getByRole('button',{name:'Import SRT / VTT',exact:true}).click();await(await pick).setFiles({name:'captions.srt',mimeType:'text/plain',buffer:Buffer.from('1\n00:00:00,100 --> 00:00:01,900\nAlpha Beta Gamma\n')});await page.getByRole('textbox',{name:'Word text',exact:true}).first().waitFor();
+ pick=page.waitForEvent('filechooser');await page.getByRole('button',{name:'Import SRT / VTT',exact:true}).click();await(await pick).setFiles({name:'captions.srt',mimeType:'text/plain',buffer:Buffer.from('1\n00:00:00,100 --> 00:00:01,900\n'+(process.env.FRAME_HINDI_TEST==='1'?'जिसे पाना था':'Alpha Beta Gamma')+'\n')});await page.getByRole('textbox',{name:'Word text',exact:true}).first().waitFor();
+ if(process.env.FRAME_HINDI_TEST==='1'){assert.equal(await page.getByRole('textbox',{name:'Word text',exact:true}).first().inputValue(),'जिसे');}
  await page.getByRole('button',{name:'Templates',exact:true}).first().click();const results=[];
- for(const name of names.filter(n=>!process.env.FRAME_TEMPLATE_ONLY||n===process.env.FRAME_TEMPLATE_ONLY)){
+ for(const name of names.filter(n=>!process.env.FRAME_TEMPLATE_ONLY||process.env.FRAME_TEMPLATE_ONLY.split(',').includes(n))){
   const card=page.getByRole('button',{name:new RegExp('^'+name)});await card.click();if(reference)await page.getByRole('button',{name:'Use template layout',exact:true}).click();assert.equal(await card.getAttribute('aria-pressed'),'true');
   const previews=[];
   for(const time of reference?[.3,.9,1.2,1.7]:[1.2]){
@@ -35,5 +36,7 @@ try{
   }
   results.push({name,dimensions:[v.width,v.height],audio:true,duration:Number(p.format.duration),fullyDecoded:true,parity});console.log('NEW_TEMPLATE_PASS',JSON.stringify(results.at(-1)));await page.getByRole('button',{name:'Close dialog',exact:true}).click();
  }
+ // Reload verifies saved Unicode; imported source files may need reconnecting.
+ if(process.env.FRAME_HINDI_TEST==='1'){await page.waitForTimeout(650);await page.reload();assert.equal(await page.getByRole('textbox',{name:'Word text',exact:true}).first().inputValue(),'जिसे');}
  assert.deepEqual(errors,[]);writeFileSync(out+'/new-template-exports.json',JSON.stringify(results,null,2));console.log('NEW_TEMPLATES_ALL_PASS');
 }finally{await browser?.close();server.kill('SIGTERM');}
